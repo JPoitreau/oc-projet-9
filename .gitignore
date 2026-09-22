@@ -9,6 +9,7 @@ wheels/
 # Virtual environments
 .venv
 .env
+oc_projet_9/
 
 # data
-data/
+data/raw/
