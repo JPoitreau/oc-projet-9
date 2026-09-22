@@ -1,0 +1,131 @@
+
+import sys
+import re
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from dotenv import load_dotenv
+from openai import OpenAI
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+import faiss
+
+load_dotenv()
+
+
+ROOT = Path(__file__).resolve().parent
+if ROOT.name == "notebooks" and ROOT.parent.name == "src":
+    ROOT = ROOT.parent.parent
+
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+DATA_PATH = ROOT / "data" / "raw" / "evenements-publics-openagenda.csv"
+OUTPUT_PATH = ROOT / "data" / "processed"
+
+
+raw = pd.read_csv(DATA_PATH, sep=";")
+
+
+def check_for_dry_emails_urls_or_numeric(text_input):
+    URL_PATTERN = re.compile(r'^https?://\S+$', re.IGNORECASE)
+    EMAIL_PATTERN = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
+
+    text = text_input.strip()
+
+    if URL_PATTERN.fullmatch(text):
+        return {"valid": False, "reason": "url_only"}
+
+    if EMAIL_PATTERN.fullmatch(text):
+        return {"valid": False, "reason": "email_only"}
+
+    if text.isnumeric():
+        return {"valid": False, "reason": "numeric_only"}
+
+    return {
+        "valid": True,
+        "reason": None
+    }
+
+def normalize_text(text):
+    text = text.lower() # Convertit tous les caractères en minuscules.
+    text = re.sub(r'\s+', ' ', text) # Remplace les espaces multiples par un seul espace.
+    text = re.sub(r"(?<=[a-zà-ÿ])-(?=[a-zà-ÿ])", " ", text) # Remplace les tirets par des espaces
+    text = re.sub(r"[^a-z0-9à-ÿ\s']", "", text) # Supprime tous les caractères non alphanumériques.
+    if re.match(r"^de\s+\w+$", text):
+        text = re.sub(r"^de\s+", "", text) # Supprime le mot "de" au début de la description si présent (ex "de piano")
+    return text.strip() # Supprime les espaces en trop au début et à la fin.
+
+def clean_text(text):
+    quality = check_for_dry_emails_urls_or_numeric(text)
+    if quality["valid"]:
+        text = normalize_text(text)
+        return text
+    else:
+        return None
+
+
+clean_description = (
+    raw['description_fr']
+    .dropna()
+    .apply(clean_text)
+    .dropna()
+)
+
+
+raw = raw[raw.index.isin(clean_description.index)]
+
+
+def split_text_into_chunks(text, chunk_size = 1000, chunk_overlap = 200):
+    # Initialisation du splitter
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, # Taille de chaque segment
+        chunk_overlap=chunk_overlap # Chevauchement entre les segments
+        )
+    # Découpage du texte
+    segments = text_splitter.split_text(text)
+    return segments
+
+def get_embeddings(text, model="text-embedding-3-small"):
+    client = OpenAI()
+    response = client.embeddings.create(
+        input=text,
+        model=model
+    )
+    return response.data[0].embedding
+
+
+documents = clean_description.tolist()
+ids = np.array(raw.uid.tolist())
+
+# Génération des embeddings pour chaque document
+embeddings = np.array([get_embeddings(doc) for doc in documents])
+
+# Initialisation de l'index Faiss avec des IDs explicites
+dimension = embeddings.shape[1]
+index = faiss.IndexIDMap(faiss.IndexFlatL2(dimension))
+
+# Ajout des embeddings à l'index
+index.add_with_ids(embeddings, ids)
+
+# Sauvegarde de l'index et des métadonnées sur le disque
+faiss.write_index(index, str(Path(OUTPUT_PATH / "faiss_index.idx")))
+raw.to_csv(str(Path(OUTPUT_PATH / "metadata.csv")))
+
+
+# Exemple de requête
+query = "Informations sur les cours de piano"
+
+# Génération de l'embedding de la requête
+query_embedding = get_embeddings(query)
+
+# Recherche des k documents les plus similaires
+k = 5
+distances, indices = index.search(np.array([query_embedding]), k)
+
+# Affichage des résultats
+distances_count = 0
+for idx in indices[0]:
+    print(f"Document {idx}: {raw.loc[raw.uid == idx, 'description_fr']} - Distance: {distances[0][distances_count]}")
+    distances_count += 1
