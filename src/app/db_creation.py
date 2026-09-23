@@ -1,5 +1,6 @@
 
 import sys
+import os
 import re
 from pathlib import Path
 
@@ -7,26 +8,11 @@ import numpy as np
 import pandas as pd
 
 from dotenv import load_dotenv
-from openai import OpenAI
+#from openai import OpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import faiss
 
-load_dotenv()
-
-
-ROOT = Path(__file__).resolve().parent
-if ROOT.name == "notebooks" and ROOT.parent.name == "src":
-    ROOT = ROOT.parent.parent
-
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-DATA_PATH = ROOT / "data" / "raw" / "evenements-publics-openagenda.csv"
-OUTPUT_PATH = ROOT / "data" / "processed"
-
-
-raw = pd.read_csv(DATA_PATH, sep=";")
-
+from utils.utils import get_embeddings, PROJECT_ROOT, RAW_DATA_PATH
 
 def check_for_dry_emails_urls_or_numeric(text_input):
     URL_PATTERN = re.compile(r'^https?://\S+$', re.IGNORECASE)
@@ -65,18 +51,6 @@ def clean_text(text):
     else:
         return None
 
-
-clean_description = (
-    raw['description_fr']
-    .dropna()
-    .apply(clean_text)
-    .dropna()
-)
-
-
-raw = raw[raw.index.isin(clean_description.index)]
-
-
 def split_text_into_chunks(text, chunk_size = 1000, chunk_overlap = 200):
     # Initialisation du splitter
     text_splitter = RecursiveCharacterTextSplitter(
@@ -87,45 +61,104 @@ def split_text_into_chunks(text, chunk_size = 1000, chunk_overlap = 200):
     segments = text_splitter.split_text(text)
     return segments
 
-def get_embeddings(text, model="text-embedding-3-small"):
-    client = OpenAI()
-    response = client.embeddings.create(
-        input=text,
-        model=model
+#def get_embeddings(text, model="text-embedding-3-small"):
+#    client = OpenAI()
+#    response = client.embeddings.create(
+#        input=text,
+#        model=model
+#    )
+#    return response.data[0].embedding
+
+def rebuild_faiss_index():
+    """
+    Rebuild the Faiss index and save it to the disk.
+    Args:
+        None
+    Returns:
+        dict: Information about the rebuilt index and metadata.
+    """
+
+    OUTPUT_PATH = PROJECT_ROOT / "data" / "processed"
+    INDEX_PATH = OUTPUT_PATH / "faiss_index.idx"
+    METADATA_PATH = OUTPUT_PATH / "metadata.csv"
+
+    # Read the raw data.
+    try:
+        raw = pd.read_csv(RAW_DATA_PATH, sep=";")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"The file {RAW_DATA_PATH} does not exist.")
+    
+    # Create the output path if it doesn't exist.
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
+
+    print("Raw data loaded successfully. Starting cleaning...")
+    # Filter out rows with unusable descriptions.
+    clean_description = (
+        raw['description_fr']
+        .dropna()
+        .apply(clean_text)
+        .dropna()
     )
-    return response.data[0].embedding
 
+    raw = raw[raw.index.isin(clean_description.index)]
 
-documents = clean_description.tolist()
-ids = np.array(raw.uid.tolist())
+    # Define documents and ids for the Faiss index.
+    documents = clean_description.tolist()
+    ids = np.array(raw.uid.tolist())
 
-# Génération des embeddings pour chaque document
-embeddings = np.array([get_embeddings(doc) for doc in documents])
+    # Generate embeddings for each document.
+    print("Generating embeddings...")
+    embeddings = np.array([get_embeddings(doc) for doc in documents])
+    print("Embeddings generated successfully. Initializing Faiss index...")
+    # Initialize the Faiss index with explicit IDs.
+    dimension = embeddings.shape[1]
+    index = faiss.IndexIDMap(faiss.IndexFlatL2(dimension))
 
-# Initialisation de l'index Faiss avec des IDs explicites
-dimension = embeddings.shape[1]
-index = faiss.IndexIDMap(faiss.IndexFlatL2(dimension))
+    # Add embeddings to the index.
+    index.add_with_ids(embeddings, ids)
+    print("Faiss index initialized successfully. Saving index and metadata...")
+    # Save the index and metadata to the disk.
+    faiss.write_index(index, str(INDEX_PATH))
+    raw.to_csv(METADATA_PATH)
 
-# Ajout des embeddings à l'index
-index.add_with_ids(embeddings, ids)
+    return {
+        "nb of indexed documents": len(documents),
+        "dimension of the embeddings": dimension,
+        "index path": str(INDEX_PATH),
+        "metadata path": str(METADATA_PATH)
+    }
 
-# Sauvegarde de l'index et des métadonnées sur le disque
-faiss.write_index(index, str(Path(OUTPUT_PATH / "faiss_index.idx")))
-raw.to_csv(str(Path(OUTPUT_PATH / "metadata.csv")))
+if __name__ == "__main__":
+    
+    load_dotenv()
 
+    ROOT = Path(__file__).resolve().parent
+    if ROOT.name == "notebooks" and ROOT.parent.name == "src":
+        ROOT = ROOT.parent.parent
 
-# Exemple de requête
-query = "Informations sur les cours de piano"
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    RAW_DATA_PATH = ROOT / "data" / "raw" / "evenements-publics-openagenda.csv"
+    OUTPUT_PATH = ROOT / "data" / "processed"
+    INDEX_PATH = OUTPUT_PATH / "faiss_index.idx"
+    METADATA_PATH = OUTPUT_PATH / "metadata.csv"
 
-# Génération de l'embedding de la requête
-query_embedding = get_embeddings(query)
+    rebuild_faiss_index()
 
-# Recherche des k documents les plus similaires
-k = 5
-distances, indices = index.search(np.array([query_embedding]), k)
+    index = faiss.read_index(INDEX_PATH)
+    raw = pd.read_csv(METADATA_PATH)
+    # Exemple de requête
+    query = "Informations sur les cours de piano"
 
-# Affichage des résultats
-distances_count = 0
-for idx in indices[0]:
-    print(f"Document {idx}: {raw.loc[raw.uid == idx, 'description_fr']} - Distance: {distances[0][distances_count]}")
-    distances_count += 1
+    # Génération de l'embedding de la requête
+    query_embedding = get_embeddings(query)
+
+    # Recherche des k documents les plus similaires
+    k = 5
+    distances, indices = index.search(np.array([query_embedding]), k)
+
+    # Affichage des résultats
+    distances_count = 0
+    for idx in indices[0]:
+        print(f"Document {idx}: {raw.loc[raw.uid == idx, 'description_fr']} - Distance: {distances[0][distances_count]}")
+        distances_count += 1

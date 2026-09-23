@@ -1,16 +1,29 @@
-import os
 from fastapi import FastAPI
+from dotenv import load_dotenv
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from typing import List, Optional, Literal
-from app.app import build_prompt_session, generate_response, get_rag_resources # noqa: F401
-from utils.utils import get_embeddings, search_relevant_segments, load_index_and_raw  # noqa: F401
+from app.chat import build_prompt_session, generate_response
+
+from utils.utils import (
+    get_embeddings, # noqa: F401
+    search_relevant_segments, # noqa: F401
+    load_index_and_raw, 
+    PROJECT_ROOT, # noqa: F401
+    RAW_DATA_PATH, # noqa: F401
+    DATA_DIR, # noqa: F401
+)
+
+from app.db_creation import (
+    rebuild_faiss_index, # noqa: F401
+    check_for_dry_emails_urls_or_numeric, # noqa: F401
+    normalize_text, # noqa: F401
+    clean_text, # noqa: F401
+    split_text_into_chunks # noqa: F401
+)
 
 # To run this API localy, navigate to the src directory and use the command:
 # uvicorn app.api:app --reload
-
-
-index, raw = get_rag_resources()
 
 class MessageItem(BaseModel):                   #data model is a class that inherits from BaseModel, which is a Pydantic class
     role : Literal ["human", "ai", "system"]
@@ -24,12 +37,27 @@ chat_history = []
 
 app = FastAPI()
 
+load_dotenv()
+
+INDEX_PATH = DATA_DIR / "faiss_index.idx"
+METADATA_PATH = DATA_DIR / "metadata.csv"
+if not INDEX_PATH.exists() or not METADATA_PATH.exists():
+    index = None
+    raw = None
+    print("Index and raw data have not been loaded. Please rebuild the index.")
+else:
+    index, raw = load_index_and_raw()
+
 @app.post("/ask/")
 def ask(request: UserRequest):
     """
     Args: request: UserRequest - a request from the user containing the user's question and the chat history
     Returns: response: str
     """
+    global index, raw
+    if index is None or raw is None:
+        raise ValueError("Index and raw data have not been loaded. Please rebuild the index first.")
+
     if request.messages == [MessageItem(role='human', content='string')]:
         request.messages = []
         initial_message = "Comment puis-je vous aider?"
@@ -65,6 +93,16 @@ def ask(request: UserRequest):
     
     request.messages.append(MessageItem(role="ai", content=response))
     return response
+
+@app.get("/rebuild/")
+def rebuild():
+    global index, raw
+    rebuild_result = rebuild_faiss_index()
+    index, raw = load_index_and_raw()
+    return rebuild_result
+
+
+
 
 
 

@@ -1,3 +1,4 @@
+import sys
 from openai import OpenAI
 import numpy as np
 import faiss
@@ -5,8 +6,14 @@ import pandas as pd
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data" / "processed"
+if PROJECT_ROOT.name == "notebooks" and PROJECT_ROOT.parent.name == "src":
+    PROJECT_ROOT = PROJECT_ROOT.parent.parent
 
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "evenements-publics-openagenda.csv"
+DATA_DIR = PROJECT_ROOT / "data" / "processed"
 
 def get_embeddings(text, model="text-embedding-3-small"):
     client = OpenAI()
@@ -39,6 +46,8 @@ def search_relevant_segments(raw,index,question, k=5):
 def load_index_and_raw():
     index_path = DATA_DIR / "faiss_index.idx"
     raw_path = DATA_DIR / "metadata.csv"
+    if not index_path.exists() or not raw_path.exists():
+        raise FileNotFoundError(f"The index or raw data file does not exist at {index_path} or {raw_path}")
     index = faiss.read_index(str(index_path))
     raw = pd.read_csv(raw_path)
     return index, raw
