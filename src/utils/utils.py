@@ -32,9 +32,14 @@ def search_relevant_segments(raw,index,question, k=5):
     _ , indices = index.search(question_embedding, k) # _ is the distance
     segments = []
     for idx in indices[0]:
-        row = raw.loc[raw.uid == idx].iloc[0] 
+        if idx < 0:
+            continue
+        matches = raw.loc[raw.uid == idx]
+        if matches.empty:
+            continue
+        row = matches.iloc[0]
         segments.append(format_row_as_key_value(row))
-    return segments 
+    return segments
 
 def load_index_and_raw():
     index_path = DATA_DIR / "faiss_index.idx"

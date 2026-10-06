@@ -1,0 +1,86 @@
+[
+  {
+    "id": "Q01",
+    "category": "factual",
+    "question": "Y a-t-il un atelier pour découvrir les métiers du numérique à Toulouse ?",
+    "reference_answer": "Oui. L'événement « ATELIER DECOUVERTE DU NUMERIQUE » propose de s'orienter vers les métiers du numérique. Il a lieu à l'agence France Travail Toulouse Hippodrome (280 routes de Saint-Simon, 31100 Toulouse), avec un rendez-vous dès 9h00.",
+    "notes": "uid 9825858"
+  },
+  {
+    "id": "Q02",
+    "category": "factual",
+    "question": "Où se déroule le rendez-vous avec l'agence YES pour l'emploi industrie et logistique ?",
+    "reference_answer": "Le rendez-vous est prévu le mardi 23 juin de 11h à 12h à l'agence France Travail de Borderouge à Toulouse (31200). L'agence YES présente des missions en industrie et logistique.",
+    "notes": "uid 25926303"
+  },
+  {
+    "id": "Q03",
+    "category": "factual",
+    "question": "Qu'est-ce que le Job Dating des Minimes avec Liebherr Aérospace ?",
+    "reference_answer": "C'est un job dating le mardi 9 juin à la Maison Toulouse Services Minimes, 4 place du Marché aux Cochons, 31200 Toulouse. Liebherr Aérospace y propose des opportunités dans l'aéronautique (R&D, conception, fabrication, maintenance, etc.).",
+    "notes": "uid 4093876"
+  },
+  {
+    "id": "Q04",
+    "category": "factual",
+    "question": "Existe-t-il un atelier sur la création d'entreprise à Toulouse ?",
+    "reference_answer": "Oui. L'atelier « De l'idée à l'action : Lancez-vous dans la création d'entreprise ! » s'adresse à ceux qui souhaitent créer une entreprise ou une activité indépendante. Il présente les étapes clés du projet et l'accompagnement France Travail, avec une intervention de l'association Citéslab.",
+    "notes": "uid 23406790"
+  },
+  {
+    "id": "Q05",
+    "category": "factual",
+    "question": "Y a-t-il un événement piano au Festival Piano aux Jacobins ?",
+    "reference_answer": "Oui. Elisabeth BRAUß propose un récital dans le cadre du 46e Festival International Piano aux Jacobins à Toulouse. Le programme inclut des œuvres de Bach, Mendelssohn, Liszt, Brahms et Prokofiev.",
+    "notes": "uid 36234745"
+  },
+  {
+    "id": "Q06",
+    "category": "factual",
+    "question": "Quand l'agence KIWI Indus/Logistique reçoit-elle à Borderouge ?",
+    "reference_answer": "L'agence KIWI Indus/Logistique est présente à l'agence de Toulouse Borderouge le jeudi 25 septembre 2025 de 9h à 12h. Des postes sont recherchés (magasiniers/caristes, manutentionnaires, électriciens, etc.).",
+    "notes": "uid 82079065"
+  },
+  {
+    "id": "Q07",
+    "category": "ambiguous",
+    "question": "Qu'est-ce qu'il y a à faire ce week-end à Toulouse ?",
+    "reference_answer": "Votre question est large : pourriez-vous préciser la date du week-end concerné et le type d'événement recherché (emploi, culture, formation) ? Je pourrai alors m'appuyer sur les événements correspondants dans la base.",
+    "notes": "Attend demande de précisions ou liste si date explicite"
+  },
+  {
+    "id": "Q08",
+    "category": "ambiguous",
+    "question": "Je cherche un événement emploi.",
+    "reference_answer": "Pour vous orienter, pourriez-vous préciser la date souhaitée, le secteur (industrie, logistique, numérique, etc.) ou le quartier à Toulouse ? Plusieurs rendez-vous emploi et job datings sont répertoriés dans la base.",
+    "notes": "Ambigu — précisions attendues"
+  },
+  {
+    "id": "Q09",
+    "category": "out_of_scope",
+    "question": "Quels concerts sont prévus à Paris demain ?",
+    "reference_answer": "Je ne dispose pas d'informations sur des événements à Paris dans ma base de connaissances, qui couvre les événements publics à Toulouse. Je vous invite à reformuler une question ciblant Toulouse ou à consulter une source dédiée à Paris.",
+    "notes": "Hors périmètre géographique"
+  },
+  {
+    "id": "Q10",
+    "category": "out_of_scope",
+    "question": "Liste des festivals à Lyon en juillet.",
+    "reference_answer": "Ma base ne contient pas d'événements à Lyon. Je peux uniquement renseigner sur les événements publics passés et à venir à Toulouse. Souhaitez-vous une recherche sur Toulouse ?",
+    "notes": "Hors périmètre"
+  },
+  {
+    "id": "Q11",
+    "category": "retrieval_trap",
+    "question": "Où se former aux métiers du digital à Toulouse Hippodrome ?",
+    "reference_answer": "L'atelier « ATELIER DECOUVERTE DU NUMERIQUE » a lieu à l'agence France Travail Toulouse Hippodrome, 280 routes de Saint-Simon, 31100 Toulouse, dès 9h00. Il vise l'orientation vers les métiers du numérique.",
+    "notes": "Formulation différente de Q01 — même événement"
+  },
+  {
+    "id": "Q12",
+    "category": "retrieval_trap",
+    "question": "Récital de Elisabeth Brauss au festival piano toulousain des Jacobins ?",
+    "reference_answer": "Oui. Elisabeth BRAUß se produit dans le cadre du 46e Festival International Piano aux Jacobins. Il s'agit d'un récital de piano avec un programme allant de Bach à Prokofiev.",
+    "notes": "Synonymes / uid 36234745"
+  }
+]

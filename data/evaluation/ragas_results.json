@@ -1,0 +1,14 @@
+{
+  "run_at": "2026-10-02T10:02:25.486669+00:00",
+  "n_questions": 12,
+  "metrics_mean": {
+    "faithfulness": 0.5583994708994708,
+    "answer_relevancy": 0.3298452269671118,
+    "context_precision": 0.5560185184760956,
+    "answer_correctness": 0.40812196387040994
+  },
+  "acceptable_rate": 0.3333333333333333,
+  "threshold": 0.7,
+  "worst_question_index": 1,
+  "worst_question_id": "Q02"
+}

@@ -79,17 +79,31 @@ Template - Assistant intelligent de recommandation d’événements culturels
 7. Évaluation du système
 ●	Jeu de test annoté :
 
-○	Nombre d’exemples
-○	Méthode d’annotation
+○	**12 exemples** dans [`data/evaluation/annotated_qa.json`](data/evaluation/annotated_qa.json) (`question`, `reference_answer`, champs optionnels `id`, `category`, `notes`).
+○	**Méthode d’annotation** : recherche manuelle dans `metadata.csv` ; réponse de référence rédigée à la main (2–5 phrases) ; catégories `factual`, `ambiguous`, `out_of_scope`, `retrieval_trap`.
 
-●	Métriques d’évaluation :
+●	Métriques d’évaluation (Ragas 0.3, script [`src/evaluate_rag.py`](src/evaluate_rag.py)) :
 
-○	Exemple : similarité sémantique, taux de couverture des réponses, score de satisfaction (subjectif)
+○	**faithfulness** — fidélité de la réponse aux contextes FAISS ;
+○	**answer_relevancy** — pertinence par rapport à la question ;
+○	**context_precision** — qualité du retrieval vs réponse de référence ;
+○	**answer_correctness** — proximité avec la réponse annotée ;
+○	**Taux acceptable** (maison) : part des questions avec faithfulness et answer_relevancy ≥ 0,7.
 
 ●	Résultats obtenus :
 
-○	Analyse quantitative (scores globaux)
-○	Analyse qualitative (exemples de bonnes/mauvaises réponses)
+○	Fichiers générés sous `data/evaluation/` : `ragas_results.json`, `ragas_details.csv`, rapport [`EVALUATION.md`](data/evaluation/EVALUATION.md).
+○	Analyse quantitative (moyennes Ragas) + qualitative (meilleur / pire cas dans le rapport).
+
+●	**Commande** (clé `OPENAI_API_KEY` et index `data/processed/` requis) :
+
+```bash
+uv run python src/evaluate_rag.py
+uv run python src/evaluate_rag.py --limit 3   # debug
+uv run python src/evaluate_rag.py --from-cache   # Ragas seul (rag_predictions.json)
+```
+
+●	**pytest vs Ragas** : `pytest` valide le pipeline technique (mocks, sans API) ; Ragas mesure la qualité métier (coût et latence API). Une CI GitHub `workflow_dispatch` pourrait enchaîner les deux avec un secret `OPENAI_API_KEY`.
 
 8. Recommandations et perspectives
 ●	Ce qui fonctionne bien
@@ -107,7 +121,37 @@ Amélioration de..
 
 9.  Organisation du dépôt GitHub
 ●	Arborescence du dépôt (fichiers clés, scripts, dossiers)
+
+```
+oc-projet-9/
+├── data/
+│   ├── raw/                    # CSV Open Agenda (gitignoré)
+│   ├── processed/              # Index FAISS + metadata.csv
+│   └── evaluation/             # annotated_qa.json, ragas_results.json, EVALUATION.md
+├── src/
+│   ├── app/                    # API FastAPI, Streamlit, chat, db_creation
+│   ├── evaluate_rag.py         # Évaluation qualité Ragas
+│   ├── utils/                  # Embeddings, recherche FAISS
+│   └── notebooks/              # Exploration et prototypage
+└── tests/
+    ├── fixtures/               # Mini CSV pour tests reproductibles
+    ├── unit/                   # Tests unitaires (nettoyage, index, prompt)
+    ├── api_test.py             # Tests fonctionnels HTTP
+    └── test_annotated_dataset.py # Schéma du jeu annoté (skip si absent)
+```
+
 ●	Explication rapide de chaque répertoire
+
+●	**Tests automatisés** (sans clé API : embeddings et LLM mockés) :
+
+```bash
+uv sync --group dev
+uv run pytest
+uv run pytest tests/api_test.py -v
+uv run pytest -m slow   # perf légère + pipeline rebuild mini
+```
+
+Le fichier `tests/fixtures/sample_events.csv` sert de jeu minimal pour valider le nettoyage, l’indexation FAISS et l’API. Le jeu de référence humain pour l’évaluation qualitative peut être placé dans `data/evaluation/annotated_qa.json` (liste `{ "question", "reference_answer" }`).
 
 
 10. Annexes (exemples)

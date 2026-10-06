@@ -1,0 +1,6 @@
+uid;title_fr;description_fr;location_city;daterange_fr
+100001;Atelier decouverte du piano;Cours de piano pour debutants au centre culturel de Toulouse;Toulouse;Samedi 14h00
+100002;Evenement invalide URL;https://example.com/event-only;Toulouse;Dimanche 10h00
+100003;Evenement numerique seul;424242;Toulouse;Lundi 11h00
+100004;Atelier decouverte du numerique;Atelier numerique pour s'orienter vers les metiers du digital;Toulouse;Mardi 9h00
+100005;Contact seulement;recruteur@example.com;Toulouse;Mercredi 15h00
