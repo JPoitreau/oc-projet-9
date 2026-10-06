@@ -1,25 +1,25 @@
-from fastapi import FastAPI, HTTPException
-from dotenv import load_dotenv
-from pydantic import BaseModel, Field, field_validator
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from typing import List, Optional, Literal
-from app.chat import build_prompt_session, generate_response
-
-from utils.utils import (
-    get_embeddings, # noqa: F401
-    search_relevant_segments, # noqa: F401
-    load_index_and_raw, 
-    PROJECT_ROOT, # noqa: F401
-    RAW_DATA_PATH, # noqa: F401
-    DATA_DIR, # noqa: F401
-)
+from typing import Literal
 
 from app.db_creation import (
-    rebuild_faiss_index, # noqa: F401
-    check_for_dry_emails_urls_or_numeric, # noqa: F401
-    normalize_text, # noqa: F401
-    clean_text, # noqa: F401
-    split_text_into_chunks # noqa: F401
+    check_for_dry_emails_urls_or_numeric,  # noqa: F401
+    clean_text,  # noqa: F401
+    normalize_text,  # noqa: F401
+    rebuild_faiss_index,
+    split_text_into_chunks,  # noqa: F401
+)
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from pydantic import BaseModel, Field, field_validator
+
+from app.chat import build_prompt_session, generate_response
+from utils.utils import (
+    DATA_DIR,
+    PROJECT_ROOT,  # noqa: F401
+    RAW_DATA_PATH,  # noqa: F401
+    get_embeddings,  # noqa: F401
+    load_index_and_raw,
+    search_relevant_segments,  # noqa: F401
 )
 
 # To run this API localy, navigate to the src directory and use the command:
@@ -31,7 +31,7 @@ class MessageItem(BaseModel):                   #data model is a class that inhe
 
 class UserRequest(BaseModel):
     user_question: str = Field(min_length=1)
-    messages: Optional[List[MessageItem]] = None
+    messages: list[MessageItem] | None = None
 
     @field_validator("user_question")
     @classmethod
@@ -62,7 +62,7 @@ def ask(request: UserRequest):
     Args: request: UserRequest - a request from the user containing the user's question and the chat history
     Returns: response: str
     """
-    global index, raw
+
     if index is None or raw is None:
         raise HTTPException(
             status_code=503,

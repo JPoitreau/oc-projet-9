@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.chat import build_prompt_session, generate_response, run_rag_query
 
@@ -50,9 +50,8 @@ def test_run_rag_query(mini_faiss_index):
     with patch(
         "app.chat.search_relevant_segments",
         return_value=["ctx"],
-    ):
-        with patch("app.chat.generate_response", side_effect=capture_generate):
-            answer, contexts = run_rag_query("Question test", raw, index)
+    ), patch("app.chat.generate_response", side_effect=capture_generate):
+        answer, contexts = run_rag_query("Question test", raw, index)
 
     assert answer == "Réponse RAG"
     assert contexts == ["ctx"]

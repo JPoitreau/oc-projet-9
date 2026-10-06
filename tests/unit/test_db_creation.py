@@ -5,7 +5,6 @@ import shutil
 import faiss
 import pandas as pd
 import pytest
-
 from app.db_creation import (
     check_for_dry_emails_urls_or_numeric,
     clean_text,
@@ -53,8 +52,8 @@ def test_split_text_into_chunks():
 
 
 def test_rebuild_faiss_index(tmp_path, patch_get_embeddings, monkeypatch, sample_csv_path):
-    import app.db_creation as db_creation
     import utils.utils as utils_module
+    from app import db_creation
 
     raw_dir = tmp_path / "data" / "raw"
     raw_dir.mkdir(parents=True)
@@ -83,8 +82,8 @@ def test_rebuild_then_ask_pipeline(
     tmp_path, patch_get_embeddings, monkeypatch, sample_csv_path, fake_get_embeddings
 ):
     """Pipeline mini rebuild + recherche sans LLM."""
-    import app.db_creation as db_creation
     import utils.utils as utils_module
+    from app import db_creation
     from utils.utils import search_relevant_segments
 
     raw_dir = tmp_path / "data" / "raw"

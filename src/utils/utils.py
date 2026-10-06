@@ -1,8 +1,9 @@
-from openai import OpenAI
-import numpy as np
-import faiss
-import pandas as pd
 from pathlib import Path
+
+import faiss
+import numpy as np
+import pandas as pd
+from openai import OpenAI
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data" / "processed"

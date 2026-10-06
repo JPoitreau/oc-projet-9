@@ -10,7 +10,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -163,7 +163,7 @@ def write_outputs(result, rows_meta: list[dict]):
         worst_idx = 0
 
     summary = {
-        "run_at": datetime.now(timezone.utc).isoformat(),
+        "run_at": datetime.now(UTC).isoformat(),
         "n_questions": len(rows_meta),
         "metrics_mean": metric_means,
         "acceptable_rate": acceptable_rate,
@@ -216,8 +216,10 @@ def update_evaluation_md(summary: dict, details: pd.DataFrame, worst_idx: int):
     lines.extend(
         [
             "",
+            (
             f"**Taux de réponses acceptables** (faithfulness et answer_relevancy ≥ {THRESHOLD}) : "
-            f"**{summary.get('acceptable_rate', 0):.1%}**",
+            f"**{summary.get('acceptable_rate', 0):.1%}**"
+            ),
             "",
             "## 4. Interprétation des métriques",
             "",
@@ -226,22 +228,32 @@ def update_evaluation_md(summary: dict, details: pd.DataFrame, worst_idx: int):
             "- **context_precision** : mesure si les segments FAISS sont pertinents pour produire la réponse de référence.",
             "- **answer_correctness** : proximité sémantique entre réponse générée et réponse annotée.",
             "",
+            (
             "Les scores doivent être lus conjointement : un **faithfulness** élevé avec un "
             "**context_precision** faible indique des réponses prudentes mais mal alimentées ; un "
             "**answer_correctness** bas sur les questions `out_of_scope` peut refléter un refus "
-            "formulé différemment de la référence humaine.",
+            "formulé différemment de la référence humaine."
+            ),
             "",
             "### Synthèse du run",
             "",
+            (
             f"- **Retrieval** (context_precision ≈ {means.get('context_precision', 0):.2f}) : "
-            "récupération partiellement alignée avec les réponses de référence.",
+            "récupération partiellement alignée avec les réponses de référence."
+            ),
+            (
             f"- **Génération** (faithfulness ≈ {means.get('faithfulness', 0):.2f}, "
             f"answer_relevancy ≈ {means.get('answer_relevancy', 0):.2f}) : "
-            "qualité variable selon la formulation de la question.",
+            "qualité variable selon la formulation de la question."
+            ),
+            (
             f"- **Alignement référence** (answer_correctness ≈ {means.get('answer_correctness', 0):.2f}) : "
-            "écart sémantique modéré avec les réponses annotées.",
+            "écart sémantique modéré avec les réponses annotées."
+            ),
+            (
             f"- **Taux acceptable** : {summary.get('acceptable_rate', 0):.1%} des questions "
-            f"atteignent faithfulness et answer_relevancy ≥ {THRESHOLD}.",
+            f"atteignent faithfulness et answer_relevancy ≥ {THRESHOLD}."
+            ),
             "",
             "## 5. Exemples qualitatifs",
             "",

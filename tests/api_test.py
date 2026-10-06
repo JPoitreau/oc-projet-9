@@ -60,9 +60,8 @@ def test_rebuild_success(api_client, mini_faiss_index):
         "metadata path": "/tmp/metadata.csv",
     }
 
-    with patch("app.api.rebuild_faiss_index", return_value=rebuild_payload):
-        with patch("app.api.load_index_and_raw", return_value=(index, raw)):
-            response = api_client.get("/rebuild/")
+    with patch("app.api.rebuild_faiss_index", return_value=rebuild_payload), patch("app.api.load_index_and_raw", return_value=(index, raw)):
+        response = api_client.get("/rebuild/")
 
     assert response.status_code == 200
     assert response.json()["nb of indexed documents"] == 2

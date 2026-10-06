@@ -7,7 +7,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from utils.utils import format_row_as_key_value, load_index_and_raw, search_relevant_segments
+from utils.utils import (
+    format_row_as_key_value,
+    load_index_and_raw,
+    search_relevant_segments,
+)
 
 
 def test_format_row_as_key_value_skips_empty():

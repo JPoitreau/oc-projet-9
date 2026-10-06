@@ -1,10 +1,15 @@
-import streamlit as st
 import os
+
+import streamlit as st
 from dotenv import load_dotenv
-from openai import OpenAI
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain.chat_models import init_chat_model
-from utils.utils import get_embeddings, search_relevant_segments, load_index_and_raw  # noqa: F401
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
+from utils.utils import (  # noqa: F401
+    get_embeddings,
+    load_index_and_raw,
+    search_relevant_segments,
+)
 
 load_dotenv()
 
@@ -75,7 +80,7 @@ def generate_response(prompt_messages):
     try:
         response = model.invoke(prompt_messages)
         return response.content
-    except Exception as e:
+    except Exception as e: # noqa: BLE001 # pylint: disable=broad-exception-caught
         st.error(f"Une erreur est survenue lors de la génération de la réponse: {e}")
         return "Je suis désolé, j'ai rencontré un problème technique. Veuillez réessayer."
 

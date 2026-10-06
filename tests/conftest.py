@@ -71,8 +71,8 @@ def mini_faiss_index(sample_raw_df, fake_get_embeddings):
 @pytest.fixture
 def patch_get_embeddings(monkeypatch, fake_get_embeddings):
     """Remplace get_embeddings dans utils et db_creation."""
-    import app.db_creation as db_creation
     import utils.utils as utils_module
+    from app import db_creation
 
     monkeypatch.setattr(utils_module, "get_embeddings", fake_get_embeddings)
     monkeypatch.setattr(db_creation, "get_embeddings", fake_get_embeddings)
@@ -81,6 +81,7 @@ def patch_get_embeddings(monkeypatch, fake_get_embeddings):
 @pytest.fixture
 def api_client():
     from fastapi.testclient import TestClient
+
     from app.api import app
 
     return TestClient(app)
