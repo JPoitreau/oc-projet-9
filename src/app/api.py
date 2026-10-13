@@ -1,0 +1,120 @@
+from typing import Literal
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from pydantic import BaseModel, Field, field_validator
+
+from app.chat import build_prompt_session, generate_response
+from app.db_creation import (
+    check_for_dry_emails_urls_or_numeric,  # noqa: F401
+    clean_text,  # noqa: F401
+    normalize_text,  # noqa: F401
+    rebuild_faiss_index,
+    split_text_into_chunks,  # noqa: F401
+)
+from utils.utils import (
+    DATA_DIR,
+    PROJECT_ROOT,  # noqa: F401
+    RAW_DATA_PATH,  # noqa: F401
+    get_embeddings,  # noqa: F401
+    load_index_and_raw,
+    search_relevant_segments,  # noqa: F401
+)
+
+# To run this API localy, navigate to the src directory and use the command:
+# uvicorn app.api:app --reload
+
+class MessageItem(BaseModel):                   #data model is a class that inherits from BaseModel, which is a Pydantic class
+    role : Literal["human", "ai", "system"]
+    content: str
+
+class UserRequest(BaseModel):
+    user_question: str = Field(min_length=1)
+    messages: list[MessageItem] | None = None
+
+    @field_validator("user_question")
+    @classmethod
+    def question_not_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("La question ne peut pas être vide.")
+        return stripped
+
+chat_history = []
+
+app = FastAPI()
+
+load_dotenv()
+
+INDEX_PATH = DATA_DIR / "faiss_index.idx"
+METADATA_PATH = DATA_DIR / "metadata.csv"
+if not INDEX_PATH.exists() or not METADATA_PATH.exists():
+    index = None
+    raw = None
+    print("Index and raw data have not been loaded. Please rebuild the index.")
+else:
+    index, raw = load_index_and_raw()
+
+@app.post("/ask/")
+def ask(request: UserRequest):
+    """
+    Args: request: UserRequest - a request from the user containing the user's question and the chat history
+    Returns: response: str
+    """
+
+    if index is None or raw is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Index and raw data have not been loaded. Please rebuild the index first.",
+        )
+
+    if request.messages is None:
+        request.messages = []
+
+    if request.messages == [MessageItem(role='human', content='string')]:
+        request.messages = []
+        initial_message = "Comment puis-je vous aider?"
+        request.messages.append(
+            MessageItem(role = "ai", content=initial_message)
+            )
+    print("request.messages : ", request.messages)
+    
+    history_as_langchain = []
+
+    for message_item in request.messages:
+        if message_item.role == 'human':
+            history_as_langchain.append(HumanMessage(message_item.content))
+        elif message_item.role == 'ai':
+            history_as_langchain.append(AIMessage(message_item.content))
+        else:
+            history_as_langchain.append(SystemMessage(message_item.content))
+
+    print("history_as_langchain : ", history_as_langchain)
+
+    prompt = build_prompt_session(history_as_langchain, raw, index, request.user_question)
+    prompt.append(HumanMessage(request.user_question))
+    print("prompt : ", prompt)
+
+    request.messages = [
+    MessageItem(role=msg.type, content=msg.content)
+    for msg in prompt
+    ]
+
+    response = generate_response(prompt)
+
+    print("response : ", response)
+    
+    request.messages.append(MessageItem(role="ai", content=response))
+    return response
+
+@app.get("/rebuild/")
+def rebuild():
+    global index, raw
+    try:
+        rebuild_result = rebuild_faiss_index()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    index, raw = load_index_and_raw()
+    return rebuild_result
+

@@ -1,11 +1,13 @@
-from openai import OpenAI
-import numpy as np
-import faiss
-import pandas as pd
 from pathlib import Path
+
+import faiss
+import numpy as np
+import pandas as pd
+from openai import OpenAI
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data" / "processed"
+RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "evenements-publics-openagenda.csv"
 
 
 def get_embeddings(text, model="text-embedding-3-small"):
@@ -32,13 +34,22 @@ def search_relevant_segments(raw,index,question, k=5):
     _ , indices = index.search(question_embedding, k) # _ is the distance
     segments = []
     for idx in indices[0]:
-        row = raw.loc[raw.uid == idx].iloc[0] 
+        if idx < 0:
+            continue
+        matches = raw.loc[raw.uid == idx]
+        if matches.empty:
+            continue
+        row = matches.iloc[0]
         segments.append(format_row_as_key_value(row))
-    return segments 
+    return segments
 
 def load_index_and_raw():
     index_path = DATA_DIR / "faiss_index.idx"
     raw_path = DATA_DIR / "metadata.csv"
+    if not index_path.is_file():
+        raise FileNotFoundError(index_path)
+    if not raw_path.is_file():
+        raise FileNotFoundError(raw_path)
     index = faiss.read_index(str(index_path))
     raw = pd.read_csv(raw_path)
     return index, raw
