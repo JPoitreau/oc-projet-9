@@ -11,10 +11,18 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-model = init_chat_model(
-    model="gpt-4o-mini",
-    api_key=os.environ.get("OPENAI_API_KEY"),
-)
+model = None
+
+
+def _ensure_model():
+    """Instancie le LLM au premier appel (évite OpenAI à l'import, ex. pytest en CI)."""
+    global model
+    if model is None:
+        model = init_chat_model(
+            model="gpt-4o-mini",
+            api_key=os.environ.get("OPENAI_API_KEY"),
+        )
+    return model
 
 
 def build_prompt_session(
@@ -89,7 +97,7 @@ def run_rag_query(question: str, raw, index, k: int = 5) -> tuple[str, list[str]
 
 def generate_response(prompt_messages):
     try:
-        response = model.invoke(prompt_messages)
+        response = _ensure_model().invoke(prompt_messages)
         return response.content
     except Exception:
         logger.exception("Erreur lors de la génération de la réponse")

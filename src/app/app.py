@@ -21,9 +21,6 @@ streamlit_role_mapping = {
 
 model = init_chat_model(model="gpt-4o-mini", api_key=os.environ.get("OPENAI_API_KEY"))
 
-#if "messages" not in st.session_state:
-#    st.session_state.messages = [AIMessage(content="Bonjour, je suis l'assistant virtuel de renseignement sur les événements publics. Comment puis-je vous aider?")]
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
