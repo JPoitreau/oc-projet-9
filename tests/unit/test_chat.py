@@ -88,3 +88,17 @@ def test_generate_response_on_error():
     with patch("app.chat.model", mock_model):
         result = generate_response([HumanMessage(content="Question")])
     assert "problème technique" in result.lower()
+
+
+def test_ensure_model_lazy_init():
+    import app.chat as chat_module
+
+    mock_model = MagicMock()
+    mock_model.invoke.return_value = MagicMock(content="Lazy")
+    chat_module.model = None
+    with patch("app.chat.init_chat_model", return_value=mock_model) as mock_init:
+        result = generate_response([HumanMessage(content="Question")])
+
+    mock_init.assert_called_once()
+    assert result == "Lazy"
+    chat_module.model = None

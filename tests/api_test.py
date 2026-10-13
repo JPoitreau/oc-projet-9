@@ -1,5 +1,6 @@
 """Tests fonctionnels de l'API FastAPI (RAG)."""
 
+import importlib
 from unittest.mock import patch
 
 import app.api as api_module
@@ -76,3 +77,51 @@ def test_rebuild_missing_data(api_client):
 
     assert response.status_code == 503
     assert "CSV absent" in response.json()["detail"]
+
+
+def test_ask_with_message_roles(api_client, mini_faiss_index, patch_get_embeddings):
+    index, raw = mini_faiss_index
+    api_module.index = index
+    api_module.raw = raw
+
+    payload = {
+        "user_question": "Question avec historique",
+        "messages": [
+            {"role": "human", "content": "Bonjour"},
+            {"role": "ai", "content": "Bonjour, comment puis-je vous aider ?"},
+            {"role": "system", "content": "Contexte système"},
+        ],
+    }
+    with patch("app.api.generate_response", return_value="Réponse roles"):
+        response = api_client.post("/ask/", json=payload)
+
+    assert response.status_code == 200
+    assert response.json() == "Réponse roles"
+
+
+def test_ask_swagger_placeholder_message(api_client, mini_faiss_index, patch_get_embeddings):
+    index, raw = mini_faiss_index
+    api_module.index = index
+    api_module.raw = raw
+
+    with patch("app.api.generate_response", return_value="OK"):
+        response = api_client.post(
+            "/ask/",
+            json={
+                "user_question": "Test placeholder",
+                "messages": [{"role": "human", "content": "string"}],
+            },
+        )
+
+    assert response.status_code == 200
+
+
+def test_api_module_without_index_files(tmp_path, monkeypatch):
+    import utils.utils as utils_module
+
+    empty_dir = tmp_path / "processed"
+    empty_dir.mkdir(parents=True)
+    monkeypatch.setattr(utils_module, "DATA_DIR", empty_dir)
+    reloaded = importlib.reload(api_module)
+    assert reloaded.index is None
+    assert reloaded.raw is None

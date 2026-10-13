@@ -129,37 +129,34 @@ def rebuild_faiss_index():
         "metadata path": str(METADATA_PATH)
     }
 
-if __name__ == "__main__":
-    
+def _demo_rebuild_and_search():  # pragma: no cover
     load_dotenv()
 
-    ROOT = Path(__file__).resolve().parent
-    if ROOT.name == "notebooks" and ROOT.parent.name == "src":
-        ROOT = ROOT.parent.parent
+    root = Path(__file__).resolve().parent
+    if root.name == "notebooks" and root.parent.name == "src":
+        root = root.parent.parent
 
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-    RAW_DATA_PATH = ROOT / "data" / "raw" / "evenements-publics-openagenda.csv"
-    OUTPUT_PATH = ROOT / "data" / "processed"
-    INDEX_PATH = OUTPUT_PATH / "faiss_index.idx"
-    METADATA_PATH = OUTPUT_PATH / "metadata.csv"
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    raw_data_path = root / "data" / "raw" / "evenements-publics-openagenda.csv"
+    output_path = root / "data" / "processed"
+    index_path = output_path / "faiss_index.idx"
+    metadata_path = output_path / "metadata.csv"
 
     rebuild_faiss_index()
 
-    index = faiss.read_index(INDEX_PATH)
-    raw = pd.read_csv(METADATA_PATH)
-    # Exemple de requête
+    index = faiss.read_index(index_path)
+    raw = pd.read_csv(metadata_path)
     query = "Informations sur les cours de piano"
-
-    # Génération de l'embedding de la requête
     query_embedding = get_embeddings(query)
-
-    # Recherche des k documents les plus similaires
     k = 5
     distances, indices = index.search(np.array([query_embedding]), k)
 
-    # Affichage des résultats
     for rank, idx in enumerate(indices[0]):
         print(
             f"Document {idx}: {raw.loc[raw.uid == idx, 'description_fr']} - Distance: {distances[0][rank]}"
         )
+
+
+if __name__ == "__main__":
+    _demo_rebuild_and_search()

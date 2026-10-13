@@ -46,6 +46,10 @@ def search_relevant_segments(raw,index,question, k=5):
 def load_index_and_raw():
     index_path = DATA_DIR / "faiss_index.idx"
     raw_path = DATA_DIR / "metadata.csv"
+    if not index_path.is_file():
+        raise FileNotFoundError(index_path)
+    if not raw_path.is_file():
+        raise FileNotFoundError(raw_path)
     index = faiss.read_index(str(index_path))
     raw = pd.read_csv(raw_path)
     return index, raw

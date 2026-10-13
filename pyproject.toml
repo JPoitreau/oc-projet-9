@@ -43,6 +43,11 @@ markers = [
     "slow: tests de performance légers (optionnel)",
 ]
 
+[tool.coverage.run]
+omit = [
+    "src/oc_projet_9/*",
+]
+
 [project.scripts]
 oc-projet-9 = "oc_projet_9:main"
 

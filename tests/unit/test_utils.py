@@ -54,6 +54,32 @@ def test_load_index_and_raw_missing_raises(tmp_path, monkeypatch):
         load_index_and_raw()
 
 
+def test_load_index_and_raw_missing_metadata_raises(
+    tmp_path, mini_faiss_index, monkeypatch
+):
+    import utils.utils as utils_module
+
+    index, _ = mini_faiss_index
+    processed = tmp_path / "processed"
+    processed.mkdir()
+    faiss.write_index(index, str(processed / "faiss_index.idx"))
+    monkeypatch.setattr(utils_module, "DATA_DIR", processed)
+
+    with pytest.raises(FileNotFoundError):
+        load_index_and_raw()
+
+
+def test_search_relevant_segments_skips_unknown_uid(mini_faiss_index, patch_get_embeddings):
+    index, raw = mini_faiss_index
+    bogus = faiss.IndexIDMap(faiss.IndexFlatL2(8))
+    bogus.add_with_ids(
+        np.array([[1.0, 0, 0, 0, 0, 0, 0, 0]], dtype=np.float32),
+        np.array([99999], dtype=np.int64),
+    )
+    segments = search_relevant_segments(raw, bogus, "atelier piano", k=1)
+    assert segments == []
+
+
 @pytest.mark.slow
 def test_faiss_search_performance(mini_faiss_index):
     index, _ = mini_faiss_index
