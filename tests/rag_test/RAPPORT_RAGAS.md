@@ -55,11 +55,11 @@
 ### Points faibles dominants
 
 1. **Retrieval sur requêtes « entité + lieu + marque »** (YES, Liebherr, Minimes) : l’index par **description entière** et la similarité embedding ne discriminent pas assez les job datings ; le modèle reçoit des contextes **homogènes mais faux**, d’où refus corrects côté génération mais *answer_relevancy* = 0 (réponse non alignée avec ce que l’utilisateur attendait).
-2. **Context recall modéré (0,43)** : même quand la réponse est bonne, les segments FAISS ne couvrent pas tout le contenu de la réponse annotée — chunking absent, `k=5` limité, ou champs utiles noyés dans de longues lignes CSV.
+2. **Context recall modéré (0,43)** : même quand la réponse est bonne, les segments FAISS ne couvrent pas tout le contenu de la réponse annotée.
 3. **Ambiguïté?** (Q04) : *context_precision* = 0,33 signale du bruit dans le retrieval ; requêtes « Jacobins / piano » pourraient attirer des événements voisins non pertinent.
 
 --- 
 
 ## Piste à prioriser
 
-Inclure le chunking du texte indexé au traitement.
+Les descriptions indexées font **au plus 200 caractères**. De plus **seule `description_fr` est vectorisée** (ni le titre, ni le lieu, ni les dates, ni la description longue). Le contexte envoyé au LLM contient bien toute la ligne, mais la phase de **recherche** ne « voit » qu'une phrase courte, ce qui pourrait expliquer les difficultés de récupération des informations pertinentes dans la base de données.
