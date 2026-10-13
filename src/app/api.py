@@ -1,5 +1,11 @@
 from typing import Literal
 
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from pydantic import BaseModel, Field, field_validator
+
+from app.chat import build_prompt_session, generate_response
 from app.db_creation import (
     check_for_dry_emails_urls_or_numeric,  # noqa: F401
     clean_text,  # noqa: F401
@@ -7,12 +13,6 @@ from app.db_creation import (
     rebuild_faiss_index,
     split_text_into_chunks,  # noqa: F401
 )
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from pydantic import BaseModel, Field, field_validator
-
-from app.chat import build_prompt_session, generate_response
 from utils.utils import (
     DATA_DIR,
     PROJECT_ROOT,  # noqa: F401

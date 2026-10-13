@@ -1,18 +1,19 @@
 
-import sys
 import os
 import re
+import sys
 from pathlib import Path
 
+import faiss
 import numpy as np
 import pandas as pd
-
 from dotenv import load_dotenv
+
 #from openai import OpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-import faiss
 
-from utils.utils import get_embeddings, PROJECT_ROOT, RAW_DATA_PATH
+from utils.utils import PROJECT_ROOT, RAW_DATA_PATH, get_embeddings
+
 
 def check_for_dry_emails_urls_or_numeric(text_input):
     URL_PATTERN = re.compile(r'^https?://\S+$', re.IGNORECASE)
@@ -158,7 +159,7 @@ if __name__ == "__main__":
     distances, indices = index.search(np.array([query_embedding]), k)
 
     # Affichage des résultats
-    distances_count = 0
-    for idx in indices[0]:
-        print(f"Document {idx}: {raw.loc[raw.uid == idx, 'description_fr']} - Distance: {distances[0][distances_count]}")
-        distances_count += 1
+    for rank, idx in enumerate(indices[0]):
+        print(
+            f"Document {idx}: {raw.loc[raw.uid == idx, 'description_fr']} - Distance: {distances[0][rank]}"
+        )

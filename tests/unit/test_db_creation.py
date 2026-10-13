@@ -5,6 +5,7 @@ import shutil
 import faiss
 import pandas as pd
 import pytest
+
 from app.db_creation import (
     check_for_dry_emails_urls_or_numeric,
     clean_text,
