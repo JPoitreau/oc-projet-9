@@ -7,6 +7,7 @@ from openai import OpenAI
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data" / "processed"
+RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "evenements-publics-openagenda.csv"
 
 
 def get_embeddings(text, model="text-embedding-3-small"):
