@@ -13,3 +13,6 @@ oc_projet_9/
 
 # data
 data/raw/
+
+# files
+CD_pipeline.yml
