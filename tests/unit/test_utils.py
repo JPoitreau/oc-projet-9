@@ -70,7 +70,7 @@ def test_load_index_and_raw_missing_metadata_raises(
 
 
 def test_search_relevant_segments_skips_unknown_uid(mini_faiss_index, patch_get_embeddings):
-    index, raw = mini_faiss_index
+    _index, raw = mini_faiss_index
     bogus = faiss.IndexIDMap(faiss.IndexFlatL2(8))
     bogus.add_with_ids(
         np.array([[1.0, 0, 0, 0, 0, 0, 0, 0]], dtype=np.float32),

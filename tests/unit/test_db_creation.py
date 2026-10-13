@@ -52,6 +52,20 @@ def test_split_text_into_chunks():
     assert all(len(chunk) <= 100 for chunk in chunks)
 
 
+def test_rebuild_faiss_index_missing_csv(tmp_path, monkeypatch):
+    import utils.utils as utils_module
+    from app import db_creation
+
+    missing = tmp_path / "data" / "raw" / "evenements-publics-openagenda.csv"
+    monkeypatch.setattr(utils_module, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(utils_module, "RAW_DATA_PATH", missing)
+    monkeypatch.setattr(db_creation, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(db_creation, "RAW_DATA_PATH", missing)
+
+    with pytest.raises(FileNotFoundError, match="does not exist"):
+        rebuild_faiss_index()
+
+
 def test_rebuild_faiss_index(tmp_path, patch_get_embeddings, monkeypatch, sample_csv_path):
     import utils.utils as utils_module
     from app import db_creation

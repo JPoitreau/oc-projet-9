@@ -138,7 +138,6 @@ def _demo_rebuild_and_search():  # pragma: no cover
 
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
-    raw_data_path = root / "data" / "raw" / "evenements-publics-openagenda.csv"
     output_path = root / "data" / "processed"
     index_path = output_path / "faiss_index.idx"
     metadata_path = output_path / "metadata.csv"
